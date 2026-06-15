@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pulse — Site Monitoring</title>
+<style>
+:root{
+  --accent:#3ddc97; --accent-2:#2bb37a; --accent-soft:rgba(61,220,151,.14);
+  --up:#3ddc97; --up-soft:rgba(61,220,151,.13);
+  --down:#ff5a6a; --down-soft:rgba(255,90,106,.13);
+  --warn:#ff9f43;
+  --radius:18px; --radius-sm:12px; --ease:cubic-bezier(.22,1,.36,1);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --mono:'SF Mono',ui-monospace,'Roboto Mono',Menlo,Consolas,monospace;
+}
+[data-theme="dark"]{
+  --bg:#0b0d11; --bg-2:#11141a; --surface:#151921; --surface-2:#1b2029;
+  --border:rgba(255,255,255,.07); --border-strong:rgba(255,255,255,.13);
+  --text:#f1f4f8; --text-2:#9aa3b2; --text-3:#646d7d;
+  --shadow:0 12px 44px -14px rgba(0,0,0,.7); --track:rgba(255,255,255,.08);
+}
+[data-theme="light"]{
+  --bg:#f4f6fa; --bg-2:#eaeef4; --surface:#ffffff; --surface-2:#f5f7fb;
+  --border:rgba(15,23,42,.08); --border-strong:rgba(15,23,42,.15);
+  --text:#0f172a; --text-2:#54607a; --text-3:#8b95a8;
+  --shadow:0 12px 40px -18px rgba(15,23,42,.25); --track:rgba(15,23,42,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+  transition:background .5s var(--ease),color .5s var(--ease);overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+::selection{background:var(--accent-soft)}
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;padding:26px 18px;background:var(--bg-2);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;gap:6px;transition:background .5s var(--ease)}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px}
+.brand-logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 6px 20px -5px var(--accent)}
+.brand-logo svg{width:21px;height:21px}
+.brand h1{font-size:18px;font-weight:730;letter-spacing:-.02em}
+.brand small{display:block;font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:.02em}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--text-2);
+  font-size:14.5px;font-weight:500;transition:.18s var(--ease);position:relative;width:100%;text-align:left}
+.nav-item svg{width:19px;height:19px;stroke-width:1.9}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:var(--accent-soft);color:var(--accent)}
+.nav-item.active::before{content:'';position:absolute;left:-18px;top:50%;transform:translateY(-50%);width:3px;height:20px;border-radius:0 3px 3px 0;background:var(--accent)}
+.mode-box{margin-top:auto;padding:13px 14px;border-radius:14px;background:var(--surface);font-size:12.5px;color:var(--text-2);line-height:1.5}
+.mode-box b{color:var(--text)}
+.mode-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--warn);box-shadow:0 0 0 4px color-mix(in srgb,var(--warn) 20%,transparent)}
+.mode-dot.live{background:var(--up);box-shadow:0 0 0 4px var(--up-soft)}
+.main{padding:30px 38px 60px;max-width:1200px;width:100%}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
+.greeting h2{font-size:25px;font-weight:760;letter-spacing:-.03em}
+.greeting p{color:var(--text-2);font-size:14.5px;margin-top:3px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--surface);
+  border:1px solid var(--border);color:var(--text-2);transition:.2s var(--ease)}
+.icon-btn:hover{color:var(--text);border-color:var(--border-strong);transform:translateY(-1px)}
+.icon-btn svg{width:19px;height:19px}
+.icon-btn.spin svg{animation:spin .8s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-primary{display:flex;align-items:center;gap:8px;padding:0 18px;height:42px;border-radius:12px;font-size:14px;
+  font-weight:600;color:#06241a;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 8px 22px -8px var(--accent);transition:.2s var(--ease)}
+.btn-primary:hover{transform:translateY(-1px)}.btn-primary:active{transform:scale(.98)}
+.btn-primary svg{width:18px;height:18px;stroke-width:2.6}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:.25s var(--ease)}
+.stat:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--border-strong)}
+.stat-label{font-size:12.5px;color:var(--text-2);font-weight:500;display:flex;align-items:center;gap:7px}
+.stat-label svg{width:15px;height:15px}
+.stat-value{font-size:29px;font-weight:760;letter-spacing:-.03em;margin-top:9px;line-height:1}
+.stat-value small{font-size:14px;color:var(--text-3);font-weight:600}
+.stat-value.up{color:var(--up)}.stat-value.down{color:var(--down)}
+.section{margin-bottom:28px;opacity:0;transform:translateY(14px);animation:rise .55s var(--ease) forwards}
+.section:nth-child(2){animation-delay:.05s}.section:nth-child(3){animation-delay:.1s}
+@keyframes rise{to{opacity:1;transform:none}}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+.section-head h3{font-size:16.5px;font-weight:680;letter-spacing:-.02em}
+.section-head span{font-size:13px;color:var(--text-3)}
+.site-list{display:flex;flex-direction:column;gap:12px}
+.site-card{display:grid;grid-template-columns:auto 1.6fr 1fr 1fr auto;align-items:center;gap:18px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;
+  cursor:pointer;transition:.22s var(--ease)}
+.site-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--border-strong)}
+.status-dot{width:13px;height:13px;border-radius:50%;position:relative}
+.status-dot.up{background:var(--up)}
+.status-dot.up::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--up);animation:pulse 2s var(--ease) infinite}
+@keyframes pulse{0%{transform:scale(1);opacity:.6}70%,100%{transform:scale(2.6);opacity:0}}
+.status-dot.down{background:var(--down)}
+.status-dot.pending{background:var(--warn)}
+.site-info .name{font-size:15.5px;font-weight:620;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.site-info .url{font-size:12.5px;color:var(--text-3);margin-top:3px;font-family:var(--mono)}
+.pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.03em}
+.pill.up{color:var(--up);background:var(--up-soft)}
+.pill.down{color:var(--down);background:var(--down-soft)}
+.pill.pending{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.metric .l{font-size:11.5px;color:var(--text-3);font-weight:500}
+.metric .v{font-size:17px;font-weight:680;margin-top:3px}
+.spark{display:flex;align-items:flex-end;gap:2px;height:34px}
+.spark i{flex:1;border-radius:2px;min-height:2px;background:var(--accent);opacity:.85;transition:height .4s var(--ease)}
+.spark i.bad{background:var(--down)}
+.row-actions{display:flex;gap:8px}
+.mini-btn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);
+  border:1px solid var(--border);color:var(--text-2);transition:.18s var(--ease)}
+.mini-btn:hover{color:var(--text);border-color:var(--border-strong);transform:translateY(-1px)}
+.mini-btn.danger:hover{color:var(--down);border-color:var(--down)}
+.mini-btn svg{width:16px;height:16px}
+.empty{text-align:center;padding:64px 20px;border:1.6px dashed var(--border-strong);border-radius:var(--radius);color:var(--text-2)}
+.empty .em{font-size:46px;margin-bottom:14px}
+.empty h3{font-size:18px;color:var(--text);font-weight:680;margin-bottom:6px}
+.empty p{font-size:14px;max-width:360px;margin:0 auto 20px}
+.overlay{position:fixed;inset:0;background:rgba(4,6,9,.6);backdrop-filter:blur(6px);display:grid;place-items:center;
+  z-index:60;opacity:0;pointer-events:none;transition:.28s var(--ease);padding:20px}
+.overlay.show{opacity:1;pointer-events:auto}
+.modal{width:100%;max-width:470px;background:var(--surface);border:1px solid var(--border-strong);border-radius:22px;
+  padding:26px;box-shadow:var(--shadow);transform:translateY(24px) scale(.96);transition:.32s var(--ease)}
+.overlay.show .modal{transform:none}
+.modal h3{font-size:19px;font-weight:720;letter-spacing:-.02em;margin-bottom:20px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:8px}
+.field input{width:100%;height:46px;padding:0 14px;border-radius:12px;font-size:15px;color:var(--text);
+  background:var(--surface-2);border:1.6px solid var(--border);transition:.2s var(--ease);font-family:inherit}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.field input.err{border-color:var(--down);box-shadow:0 0 0 4px var(--down-soft)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.err-msg{font-size:12px;color:var(--down);margin-top:6px;display:none}.err-msg.show{display:block}
+.modal-foot{display:flex;gap:10px;margin-top:22px}
+.btn-ghost{flex:1;height:46px;border-radius:12px;font-size:14px;font-weight:600;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--border);transition:.2s var(--ease)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border-strong)}
+.btn-save{flex:1.4;height:46px;border-radius:12px;font-size:14px;font-weight:650;color:#06241a;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px -8px var(--accent);transition:.2s var(--ease)}
+.btn-save:hover{transform:translateY(-1px)}
+.detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.mini-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px 19px}
+.mini-stat .l{font-size:12px;color:var(--text-2);font-weight:500}
+.mini-stat .v{font-size:24px;font-weight:740;letter-spacing:-.03em;margin-top:7px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:150px;padding-top:10px}
+.bars .bar{flex:1;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--accent),var(--accent-2));min-height:3px;transition:height .5s var(--ease);position:relative}
+.bars .bar.bad{background:linear-gradient(180deg,var(--down),#d63d4d)}
+.back-btn{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:18px;transition:.18s}
+.back-btn:hover{color:var(--text)}.back-btn svg{width:17px;height:17px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--text-3);font-weight:600;padding:0 12px 12px;border-bottom:1px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--border);color:var(--text-2)}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:var(--mono);font-size:12.5px}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);
+  border:1px solid var(--border-strong);border-radius:14px;padding:13px 20px;font-size:14px;font-weight:550;
+  box-shadow:var(--shadow);z-index:80;transition:.4s var(--ease);display:flex;align-items:center;gap:10px;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .dot{width:9px;height:9px;border-radius:50%;background:var(--up);flex:none}
+.toast.err .dot{background:var(--down)}
+.hide{display:none!important}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;bottom:0;top:auto;height:auto;width:100%;flex-direction:row;padding:10px;
+    border-right:none;border-top:1px solid var(--border);z-index:50;justify-content:space-around}
+  .brand,.mode-box{display:none}.nav-item.active::before{display:none}.nav-item span{display:none}
+  .main{padding:22px 18px 100px}.stat-row,.detail-grid{grid-template-columns:repeat(2,1fr)}
+  .site-card{grid-template-columns:auto 1fr auto;gap:12px}
+  .site-card .metric,.site-card .spark{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#06241a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3 8 4-16 3 8h6"/></svg></div>
+      <div><h1>Pulse</h1><small>SITE MONITORING</small></div>
+    </div>
+    <button class="nav-item active" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Дашборд</span></button>
+    <button class="nav-item" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Настройки</span></button>
+    <div class="mode-box" id="modeBox"></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="greeting"><h2 id="pageTitle">Мониторинг</h2><p id="pageSub">Загрузка…</p></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="refreshBtn" title="Обновить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg></button>
+        <button class="icon-btn" id="themeBtn" title="Тема"></button>
+        <button class="btn-primary" id="addBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Добавить сайт</button>
+      </div>
+    </div>
+    <div id="viewRoot"></div>
+  </main>
+</div>
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg"></span></div>
+<script>
+(() => {
+  'use strict';
+  const LS_THEME='pulse.theme', LS_API='pulse.apiBase', LS_DEMO='pulse.demo.v1';
+  const MIN=60000, HOUR=3600000, DAY=86400000;
+  let view='dashboard', detailId=null, refreshTimer=null;
+  let apiBase=localStorage.getItem(LS_API);
+  let autoApi=false;
+  if(apiBase===null){ const auto=(typeof location!=='undefined'&&/^https?:$/.test(location.protocol)); apiBase=auto?location.origin:''; autoApi=auto; }
+  const root=document.getElementById('viewRoot');
+  const live=()=>!!apiBase;
+
+  /* ---------------- demo store ---------------- */
+  function loadDemo(){ try{const r=JSON.parse(localStorage.getItem(LS_DEMO));if(r&&r.length)return r;}catch(e){} return seed(); }
+  function saveDemo(s){ localStorage.setItem(LS_DEMO,JSON.stringify(s)); }
+  function seed(){
+    const defs=[
+      {name:'Main Website',url:'https://example.com',interval:5,base:180,rel:.995},
+      {name:'API Gateway',url:'https://api.example.com/health',interval:2,base:90,rel:.985},
+      {name:'Docs Portal',url:'https://docs.example.com',interval:10,base:240,rel:1},
+      {name:'Payments Service',url:'https://pay.example.com/status',interval:1,base:130,rel:.93},
+      {name:'CDN Edge',url:'https://cdn.example.com',interval:5,base:60,rel:.999},
+      {name:'Staging',url:'https://staging.example.com',interval:15,base:320,rel:.88},
+    ];
+    const now=Date.now();
+    return defs.map((d,i)=>{
+      const checks=[]; const stepMs=d.interval*MIN;
+      // generate 7 days of checks (cap count for perf)
+      const total=Math.min(Math.floor(7*DAY/stepMs),600);
+      for(let k=total;k>=0;k--){
+        const t=now-k*stepMs;
+        const up=Math.random()<d.rel;
+        const rt=up?Math.round(d.base*(0.7+Math.random()*0.8)):0;
+        checks.push({id:checks.length+1,checked_at:new Date(t).toISOString(),is_up:up,
+          status_code:up?200:(Math.random()<.5?503:0),response_time_ms:rt,
+          error:up?null:(Math.random()<.5?'Connection timeout':'HTTP 503 Service Unavailable')});
+      }
+      const last=checks[checks.length-1];
+      return {id:i+1,name:d.name,url:d.url,interval_minutes:d.interval,expected_status:200,
+        current_status:last.is_up?'up':'down',last_checked_at:last.checked_at,
+        created_at:new Date(now-7*DAY).toISOString(),checks};
+    });
+  }
+
+  /* ---------------- stats ---------------- */
+  function within(site,ms){const c=Date.now()-ms;return site.checks.filter(x=>new Date(x.checked_at).getTime()>=c);}
+  function uptime(site,ms){const a=ms?within(site,ms):site.checks;if(!a.length)return null;return a.filter(x=>x.is_up).length/a.length*100;}
+  function avgRt(site,ms){const a=(ms?within(site,ms):site.checks).filter(x=>x.is_up&&x.response_time_ms);if(!a.length)return null;return Math.round(a.reduce((s,x)=>s+x.response_time_ms,0)/a.length);}
+  function recentChecks(site,n){return site.checks.slice(-n);}
+
+  /* ---------------- API layer (live mode) ---------------- */
+  async function api(path,opts){
+    const r=await fetch(apiBase.replace(/\/$/,'')+path,{headers:{'Content-Type':'application/json'},...opts});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const ct=r.headers.get('content-type')||''; return ct.includes('json')?r.json():null;
+  }
+  function fallbackDemo(){ apiBase=''; autoApi=false; }
+  async function getSites(){
+    if(live()){ try{ const d=await api('/api/sites'); return d.map(normalize); }catch(e){ if(autoApi){ fallbackDemo(); }else throw e; } }
+    return loadDemo();
+  }
+  async function getSite(id){
+    if(live()){ try{ return normalize(await api('/api/sites/'+id)); }catch(e){ if(autoApi){ fallbackDemo(); }else throw e; } }
+    return loadDemo().find(s=>s.id==id);
+  }
+  function normalize(s){ s.checks=s.checks||s.recent||[]; if(s.current_status!=='up'&&s.current_status!=='down')s.current_status='pending'; return s; }
+  async function addSite(p){
+    if(live()){ await api('/api/sites',{method:'POST',body:JSON.stringify(p)}); return; }
+    const s=loadDemo(); const id=(s.reduce((m,x)=>Math.max(m,x.id),0)||0)+1;
+    s.push({id,name:p.name,url:p.url,interval_minutes:p.interval_minutes,expected_status:p.expected_status||200,
+      current_status:'pending',last_checked_at:null,created_at:new Date().toISOString(),checks:[]});
+    saveDemo(s);
+  }
+  async function delSite(id){
+    if(live()){ await api('/api/sites/'+id,{method:'DELETE'}); return; }
+    saveDemo(loadDemo().filter(s=>s.id!=id));
+  }
+  async function checkNow(id){
+    if(live()){ await api('/api/sites/'+id+'/check-now',{method:'POST'}); return; }
+    const s=loadDemo(); const site=s.find(x=>x.id==id); if(!site)return;
+    const up=Math.random()<.9; const rt=up?Math.round(120*(0.6+Math.random())):0;
+    site.checks.push({id:site.checks.length+1,checked_at:new Date().toISOString(),is_up:up,
+      status_code:up?200:503,response_time_ms:rt,error:up?null:'HTTP 503 Service Unavailable'});
+    site.current_status=up?'up':'down'; site.last_checked_at=new Date().toISOString(); saveDemo(s);
+  }
+
+  /* ---------------- helpers ---------------- */
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmtPct=v=>v==null?'—':v.toFixed(v>=99.95?0:2)+'%';
+  const fmtRt=v=>v==null?'—':v+' мс';
+  function ago(iso){ if(!iso)return 'никогда'; const d=Date.now()-new Date(iso).getTime();
+    if(d<MIN)return Math.max(1,Math.round(d/1000))+' с назад'; if(d<HOUR)return Math.round(d/MIN)+' мин назад';
+    if(d<DAY)return Math.round(d/HOUR)+' ч назад'; return Math.round(d/DAY)+' д назад'; }
+  function fmtTime(iso){return new Date(iso).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  function ic(n){const s='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">';
+    const p={globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/>',
+      up:'<path d="M20 6 9 17l-5-5"/>',down:'<path d="M18 6 6 18M6 6l12 12"/>',
+      clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',bolt:'<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>',
+      play:'<path d="M5 3l14 9-14 9z"/>',trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',back:'<path d="M15 18l-6-6 6-6"/>'};
+    return s+(p[n]||'')+'</svg>';}
+
+  /* ---------------- render ---------------- */
+  async function render(){
+    document.getElementById('refreshBtn').classList.add('spin');
+    setTimeout(()=>document.getElementById('refreshBtn').classList.remove('spin'),800);
+    try{
+      if(view==='settings'){ renderSettings(); return; }
+      if(view==='detail'){ await renderDetail(); return; }
+      await renderDashboard();
+    }catch(e){ root.innerHTML=`<div class="empty"><div class="em">⚠️</div><h3>Не удалось подключиться к API</h3><p>${esc(e.message)}. Проверь URL в Настройках или вернись в демо-режим.</p><button class="btn-primary" style="margin:0 auto" onclick="Pulse.go('settings')">Открыть настройки</button></div>`;
+      document.getElementById('pageSub').textContent='Ошибка подключения'; }
+    renderMode();
+  }
+
+  function renderMode(){
+    const box=document.getElementById('modeBox');
+    box.innerHTML = live()
+      ? `<span class="mode-dot live"></span><b>Live API</b><br>${esc(apiBase)}`
+      : `<span class="mode-dot"></span><b>Демо-режим</b><br>Моковые данные. Подключи API в Настройках.`;
+  }
+
+  async function renderDashboard(){
+    const sites=await getSites();
+    document.getElementById('pageTitle').textContent='Мониторинг';
+    const up=sites.filter(s=>s.current_status==='up').length;
+    const down=sites.filter(s=>s.current_status==='down').length;
+    const rts=sites.map(s=>avgRt(s,DAY)).filter(v=>v!=null);
+    const avg=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;
+    document.getElementById('pageSub').textContent=`${sites.length} сайтов · ${up} онлайн · обновлено ${new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}`;
+    let html=`<div class="stat-row">
+      <div class="stat"><div class="stat-label">${ic('globe')}Всего сайтов</div><div class="stat-value">${sites.length}</div></div>
+      <div class="stat"><div class="stat-label">${ic('up')}Онлайн</div><div class="stat-value up">${up}</div></div>
+      <div class="stat"><div class="stat-label">${ic('down')}Недоступны</div><div class="stat-value ${down?'down':''}">${down}</div></div>
+      <div class="stat"><div class="stat-label">${ic('bolt')}Ср. ответ</div><div class="stat-value">${avg==null?'—':avg}<small> мс</small></div></div>
+    </div>`;
+    html+=`<div class="section"><div class="section-head"><h3>Сайты</h3><span>кликни для деталей</span></div>`;
+    if(!sites.length){
+      html+=`<div class="empty"><div class="em">📡</div><h3>Нет сайтов</h3><p>Добавь первый сайт для мониторинга доступности.</p><button class="btn-primary" style="margin:0 auto" onclick="Pulse.openAdd()">+ Добавить сайт</button></div>`;
+    }else{
+      html+=`<div class="site-list">`;
+      sites.forEach(s=>{
+        const u24=uptime(s,DAY), rt=avgRt(s,DAY), st=s.current_status||'pending';
+        const sp=recentChecks(s,24).map(c=>{const h=c.is_up?Math.min(100,Math.max(12,(c.response_time_ms||0)/4)):100;return `<i class="${c.is_up?'':'bad'}" style="height:${h}%"></i>`;}).join('')||'<i style="height:8%"></i>';
+        html+=`<div class="site-card" onclick="Pulse.openDetail(${s.id})">
+          <div class="status-dot ${st}"></div>
+          <div class="site-info"><div class="name">${esc(s.name)} <span class="pill ${st}">${st==='up'?'ONLINE':st==='down'?'DOWN':'PENDING'}</span></div><div class="url">${esc(s.url)}</div></div>
+          <div class="metric"><div class="l">Uptime 24ч</div><div class="v">${fmtPct(u24)}</div></div>
+          <div class="spark" title="Последние проверки">${sp}</div>
+          <div class="row-actions">
+            <button class="mini-btn" title="Проверить сейчас" onclick="event.stopPropagation();Pulse.checkNow(${s.id})">${ic('play')}</button>
+            <button class="mini-btn danger" title="Удалить" onclick="event.stopPropagation();Pulse.confirmDelete(${s.id},'${esc(s.name)}')">${ic('trash')}</button>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+    root.innerHTML=html;
+  }
+
+  async function renderDetail(){
+    const s=await getSite(detailId);
+    if(!s){ view='dashboard'; return renderDashboard(); }
+    const st=s.current_status||'pending';
+    document.getElementById('pageTitle').textContent=s.name;
+    document.getElementById('pageSub').textContent=s.url;
+    let html=`<button class="back-btn" onclick="Pulse.go('dashboard')">${ic('back')} К списку</button>`;
+    html+=`<div class="section"><div class="section-head"><h3><span class="pill ${st}">${st==='up'?'ONLINE':st==='down'?'DOWN':'PENDING'}</span> &nbsp;${esc(s.name)}</h3>
+      <button class="btn-primary" onclick="Pulse.checkNow(${s.id})">${ic('play')} Проверить сейчас</button></div>
+      <div class="detail-grid">
+        <div class="mini-stat"><div class="l">Uptime 24 ч</div><div class="v">${fmtPct(uptime(s,DAY))}</div></div>
+        <div class="mini-stat"><div class="l">Uptime 7 дней</div><div class="v">${fmtPct(uptime(s,7*DAY))}</div></div>
+        <div class="mini-stat"><div class="l">Uptime всё время</div><div class="v">${fmtPct(uptime(s,0))}</div></div>
+        <div class="mini-stat"><div class="l">Ср. ответ 24ч</div><div class="v">${fmtRt(avgRt(s,DAY))}</div></div>
+      </div></div>`;
+    const last=recentChecks(s,40);
+    const maxRt=Math.max(...last.map(c=>c.response_time_ms||0),1);
+    html+=`<div class="section"><div class="section-head"><h3>Время ответа</h3><span>последние ${last.length} проверок · мс</span></div><div class="panel"><div class="bars">`;
+    last.forEach(c=>{const h=c.is_up?Math.max(3,(c.response_time_ms/maxRt)*100):100;
+      html+=`<div class="bar ${c.is_up?'':'bad'}" style="height:${h}%" title="${fmtTime(c.checked_at)} — ${c.is_up?c.response_time_ms+' мс':'DOWN'}"></div>`;});
+    html+=`</div></div></div>`;
+    html+=`<div class="section"><div class="section-head"><h3>История проверок</h3></div><div class="panel"><table><thead><tr><th>Время</th><th>Статус</th><th>HTTP</th><th>Ответ</th><th>Ошибка</th></tr></thead><tbody>`;
+    [...recentChecks(s,12)].reverse().forEach(c=>{
+      html+=`<tr><td class="mono">${fmtTime(c.checked_at)}</td><td><span class="pill ${c.is_up?'up':'down'}">${c.is_up?'UP':'DOWN'}</span></td><td class="mono">${c.status_code||'—'}</td><td class="mono">${c.is_up?c.response_time_ms+' мс':'—'}</td><td>${esc(c.error)||'—'}</td></tr>`;});
+    if(!s.checks.length) html+=`<tr><td colspan="5" style="text-align:center;padding:24px">Пока нет проверок</td></tr>`;
+    html+=`</tbody></table></div></div>`;
+    html+=`<div class="section"><button class="mini-btn danger" style="width:auto;padding:0 16px;height:42px;gap:8px;display:flex;align-items:center" onclick="Pulse.confirmDelete(${s.id},'${esc(s.name)}')">${ic('trash')} Удалить сайт</button></div>`;
+    root.innerHTML=html;
+  }
+
+  function renderSettings(){
+    document.getElementById('pageTitle').textContent='Настройки';
+    document.getElementById('pageSub').textContent='Подключение к бэкенду и внешний вид';
+    root.innerHTML=`<div class="section"><div class="panel">
+      <div class="field"><label>URL бэкенда (FastAPI)</label>
+        <input id="apiInput" placeholder="https://localhost:8000  —  пусто = демо-режим" value="${esc(apiBase)}">
+        <div class="err-msg" id="apiErr">Не удалось подключиться. Проверь URL и CORS.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-save" style="flex:none;padding:0 20px" onclick="Pulse.saveApi()">Подключить</button>
+        <button class="btn-ghost" style="flex:none;padding:0 20px" onclick="Pulse.useDemo()">Вернуться в демо</button>
+        <button class="btn-ghost" style="flex:none;padding:0 20px" onclick="Pulse.resetDemo()">Сбросить демо-данные</button>
+      </div></div></div>
+      <div class="section"><div class="section-head"><h3>Ожидаемый JSON API</h3><span>добавь эти роуты в FastAPI</span></div>
+      <div class="panel"><table><thead><tr><th>Метод</th><th>Путь</th><th>Ответ</th></tr></thead><tbody>
+        <tr><td class="mono">GET</td><td class="mono">/api/sites</td><td>список сайтов + checks</td></tr>
+        <tr><td class="mono">GET</td><td class="mono">/api/sites/{id}</td><td>сайт + история проверок</td></tr>
+        <tr><td class="mono">POST</td><td class="mono">/api/sites</td><td>добавить сайт</td></tr>
+        <tr><td class="mono">POST</td><td class="mono">/api/sites/{id}/check-now</td><td>проверить сейчас</td></tr>
+        <tr><td class="mono">DELETE</td><td class="mono">/api/sites/{id}</td><td>удалить</td></tr>
+      </tbody></table></div>
+      <p style="color:var(--text-3);font-size:13px;margin-top:12px">Готовый роутер <b>api.py</b> и инструкция — в README проекта.</p></div>`;
+    renderMode();
+  }
+
+  /* ---------------- modal ---------------- */
+  function openAdd(){
+    document.getElementById('modal').innerHTML=`<h3>Новый сайт</h3>
+      <div class="field"><label>Название</label><input id="fName" placeholder="Main Website"><div class="err-msg" id="nameErr">Введи название</div></div>
+      <div class="field"><label>URL</label><input id="fUrl" placeholder="https://example.com"><div class="err-msg" id="urlErr">Укажи корректный URL (http:// или https://)</div></div>
+      <div class="field-row">
+        <div class="field"><label>Интервал (мин)</label><input id="fInt" type="number" min="1" value="5"></div>
+        <div class="field"><label>Ожидаемый код</label><input id="fCode" type="number" value="200"></div>
+      </div>
+      <div class="modal-foot"><button class="btn-ghost" onclick="Pulse.closeModal()">Отмена</button><button class="btn-save" onclick="Pulse.saveSite()">Добавить</button></div>`;
+    document.getElementById('overlay').classList.add('show');
+    setTimeout(()=>document.getElementById('fName').focus(),120);
+  }
+
+  function toast(msg,err){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;
+    t.classList.toggle('err',!!err);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
+
+  /* ---------------- public ---------------- */
+  window.Pulse={
+    go(v){view=v;detailId=null;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===v));render();},
+    openDetail(id){detailId=id;view='detail';document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));render();},
+    openAdd(){openAdd();},
+    closeModal(){document.getElementById('overlay').classList.remove('show');},
+    async checkNow(id){toast('Проверяю…');try{await checkNow(id);await render();toast('Проверка выполнена ✓');}catch(e){toast('Ошибка: '+e.message,true);}},
+    confirmDelete(id,name){
+      document.getElementById('modal').innerHTML=`<h3>Удалить сайт?</h3><p style="color:var(--text-2);font-size:14.5px;line-height:1.5;margin-bottom:8px">«${esc(name)}» будет удалён вместе со всей историей проверок. Действие необратимо.</p>
+        <div class="modal-foot"><button class="btn-ghost" onclick="Pulse.closeModal()">Отмена</button><button class="btn-save" style="background:linear-gradient(135deg,var(--down),#d63d4d);color:#fff;box-shadow:none" onclick="Pulse.doDelete(${id})">Удалить</button></div>`;
+      document.getElementById('overlay').classList.add('show');
+    },
+    async doDelete(id){try{await delSite(id);this.closeModal();view='dashboard';detailId=null;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view==='dashboard'));await render();toast('Сайт удалён');}catch(e){toast('Ошибка: '+e.message,true);}},
+    async saveSite(){
+      const name=document.getElementById('fName').value.trim();
+      const url=document.getElementById('fUrl').value.trim();
+      const intv=parseInt(document.getElementById('fInt').value)||5;
+      const code=parseInt(document.getElementById('fCode').value)||200;
+      let ok=true;
+      if(!name){document.getElementById('fName').classList.add('err');document.getElementById('nameErr').classList.add('show');ok=false;}
+      if(!/^https?:\/\/.+/i.test(url)){document.getElementById('fUrl').classList.add('err');document.getElementById('urlErr').classList.add('show');ok=false;}
+      if(!ok)return;
+      try{await addSite({name,url,interval_minutes:intv,expected_status:code});this.closeModal();await render();toast('Сайт добавлен 📡');}catch(e){toast('Ошибка: '+e.message,true);}
+    },
+    async saveApi(){
+      const v=document.getElementById('apiInput').value.trim();
+      if(!v){this.useDemo();return;}
+      try{ const r=await fetch(v.replace(/\/$/,'')+'/api/sites'); if(!r.ok)throw new Error('HTTP '+r.status);
+        apiBase=v;localStorage.setItem(LS_API,v);toast('Подключено к API ✓');this.go('dashboard');
+      }catch(e){document.getElementById('apiInput').classList.add('err');document.getElementById('apiErr').classList.add('show');toast('Не удалось подключиться',true);}
+    },
+    useDemo(){apiBase='';localStorage.setItem(LS_API,'');toast('Демо-режим');this.go('dashboard');},
+    resetDemo(){localStorage.removeItem(LS_DEMO);toast('Демо-данные сброшены');render();},
+    setTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem(LS_THEME,t);updateThemeBtn();},
+    refresh(){render();}
+  };
+
+  function updateThemeBtn(){
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    document.getElementById('themeBtn').innerHTML=dark
+      ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>'
+      :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  }
+
+  /* init */
+  document.getElementById('themeBtn').onclick=()=>Pulse.setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+  document.getElementById('addBtn').onclick=()=>Pulse.openAdd();
+  document.getElementById('refreshBtn').onclick=()=>Pulse.refresh();
+  document.getElementById('overlay').onclick=e=>{if(e.target.id==='overlay')Pulse.closeModal();};
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')Pulse.closeModal();});
+  document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>Pulse.go(n.dataset.view));
+  document.documentElement.setAttribute('data-theme',localStorage.getItem(LS_THEME)||'dark');
+  updateThemeBtn();
+  render();
+  refreshTimer=setInterval(()=>{if(view!=='settings')render();},30000);
+})();
+</script>
+</body>
+</html>
