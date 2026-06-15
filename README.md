@@ -3,11 +3,7 @@
 **Pulse** — full-stack сервис мониторинга доступности сайтов: асинхронный бэкенд на **FastAPI**, который проверяет URL по расписанию и шлёт алерты в Telegram, и современный одностраничный дашборд **Pulse** поверх него.
 
 > Стек: **FastAPI** · **APScheduler** · **SQLAlchemy 2.0 (async)** · **SQLite** · **httpx** · ванильный **HTML/CSS/JS** фронтенд (без сборки) · **Docker**.
-
-<!-- Скриншоты: замени на свои после запуска -->
-<!-- ![Pulse dashboard](docs/dashboard.png) -->
-<!-- ![Site detail](docs/detail.png) -->
-
+Демо-версия доступна по ссылке: _https://txltedxgod.github.io/sitemonitoring-ui/_
 ---
 
 ## ✨ Возможности
