@@ -11,9 +11,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
+from app.api import router as api_router
 from app.config import settings
 from app.database import init_db
-from app.api import router as api_router
 from app.routers import dashboard, sites
 from app.scheduler import shutdown_scheduler, start_scheduler
 
@@ -27,9 +27,10 @@ logger = logging.getLogger("monitor")
 def _ensure_dirs() -> None:
     if settings.database_url.startswith("sqlite"):
         path = settings.database_url.split(":///")[-1]
-        parent = os.path.dirname(path)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
+        if path and path != ":memory:":
+            parent = os.path.dirname(path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
 
 
 @asynccontextmanager
@@ -48,7 +49,6 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Site Monitor", version=__version__, lifespan=lifespan)
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-    # CORS — позволяет открывать Pulse UI с другого origin или как file:// при разработке.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -60,7 +60,11 @@ def create_app() -> FastAPI:
     app.include_router(sites.router)
     app.include_router(api_router)
 
-    # Pulse — красивый фронтенд (SPA в одном файле), отдаётся с того же origin.
+    @app.get("/health", tags=["system"])
+    async def health() -> dict[str, str]:
+        """Liveness check endpoint."""
+        return {"status": "healthy", "version": __version__}
+
     @app.get("/ui", include_in_schema=False)
     async def pulse_ui() -> FileResponse:
         return FileResponse("app/static/pulse.html")
