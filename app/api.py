@@ -7,7 +7,7 @@
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_serializer
@@ -26,7 +26,7 @@ def _iso_utc(dt: datetime | None) -> str | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt.isoformat()
 
 
@@ -117,7 +117,7 @@ async def api_create_site(payload: SiteIn, session: AsyncSession = Depends(get_s
             expected_status=payload.expected_status,
         )
     except sites_service.SiteError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _site_out(site, [])
 
 
