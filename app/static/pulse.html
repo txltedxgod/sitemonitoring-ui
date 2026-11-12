@@ -6,25 +6,28 @@
 <title>Pulse — Site Monitoring</title>
 <style>
 :root{
-  --accent:#3ddc97; --accent-2:#2bb37a; --accent-soft:rgba(61,220,151,.14);
-  --up:#3ddc97; --up-soft:rgba(61,220,151,.13);
-  --down:#ff5a6a; --down-soft:rgba(255,90,106,.13);
-  --warn:#ff9f43;
+  --up:#e4e4e7; --up-soft:rgba(255,255,255,.10);
+  --down:#71717a; --down-soft:rgba(113,113,122,.16);
+  --warn:#a1a1aa;
   --radius:18px; --radius-sm:12px; --ease:cubic-bezier(.22,1,.36,1);
   --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --mono:'SF Mono',ui-monospace,'Roboto Mono',Menlo,Consolas,monospace;
 }
 [data-theme="dark"]{
-  --bg:#0b0d11; --bg-2:#11141a; --surface:#151921; --surface-2:#1b2029;
-  --border:rgba(255,255,255,.07); --border-strong:rgba(255,255,255,.13);
-  --text:#f1f4f8; --text-2:#9aa3b2; --text-3:#646d7d;
-  --shadow:0 12px 44px -14px rgba(0,0,0,.7); --track:rgba(255,255,255,.08);
+  --bg:#090a0d; --bg-2:#101217; --surface:#15171e; --surface-2:#1b1d26;
+  --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.16);
+  --text:#f4f4f6; --text-2:#a1a1aa; --text-3:#71717a;
+  --accent:#f4f4f6; --accent-contrast:#090a0d; --accent-soft:rgba(255,255,255,.09);
+  --up:#ffffff; --up-soft:rgba(255,255,255,.11); --down:#71717a; --down-soft:rgba(113,113,122,.18);
+  --shadow:0 12px 40px -14px rgba(0,0,0,.7); --track:rgba(255,255,255,.08);
 }
 [data-theme="light"]{
-  --bg:#f4f6fa; --bg-2:#eaeef4; --surface:#ffffff; --surface-2:#f5f7fb;
-  --border:rgba(15,23,42,.08); --border-strong:rgba(15,23,42,.15);
-  --text:#0f172a; --text-2:#54607a; --text-3:#8b95a8;
-  --shadow:0 12px 40px -18px rgba(15,23,42,.25); --track:rgba(15,23,42,.07);
+  --bg:#f5f6f8; --bg-2:#eceef2; --surface:#ffffff; --surface-2:#f4f5f8;
+  --border:rgba(15,23,42,.08); --border-strong:rgba(15,23,42,.16);
+  --text:#0f172a; --text-2:#52525b; --text-3:#858894;
+  --accent:#0f172a; --accent-contrast:#ffffff; --accent-soft:rgba(15,23,42,.08);
+  --up:#0f172a; --up-soft:rgba(15,23,42,.09); --down:#94a3b8; --down-soft:rgba(148,163,184,.18);
+  --shadow:0 12px 36px -18px rgba(15,23,42,.22); --track:rgba(15,23,42,.07);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -37,8 +40,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   border-right:1px solid var(--border);display:flex;flex-direction:column;gap:6px;transition:background .5s var(--ease)}
 .brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px}
 .brand-logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 6px 20px -5px var(--accent)}
-.brand-logo svg{width:21px;height:21px}
+  background:var(--accent);color:var(--accent-contrast)}
+.brand-logo svg{width:21px;height:21px;stroke:var(--accent-contrast)}
 .brand h1{font-size:18px;font-weight:730;letter-spacing:-.02em}
 .brand small{display:block;font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:.02em}
 .nav-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--text-2);
@@ -63,9 +66,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .icon-btn.spin svg{animation:spin .8s linear}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn-primary{display:flex;align-items:center;gap:8px;padding:0 18px;height:42px;border-radius:12px;font-size:14px;
-  font-weight:600;color:#06241a;background:linear-gradient(135deg,var(--accent),var(--accent-2));
-  box-shadow:0 8px 22px -8px var(--accent);transition:.2s var(--ease)}
-.btn-primary:hover{transform:translateY(-1px)}.btn-primary:active{transform:scale(.98)}
+  font-weight:600;color:var(--accent-contrast);background:var(--accent);transition:.2s var(--ease)}
+.btn-primary:hover{transform:translateY(-1px);opacity:.9}.btn-primary:active{transform:scale(.98)}
 .btn-primary svg{width:18px;height:18px;stroke-width:2.6}
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:.25s var(--ease)}
@@ -132,17 +134,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .btn-ghost{flex:1;height:46px;border-radius:12px;font-size:14px;font-weight:600;color:var(--text-2);
   background:var(--surface-2);border:1px solid var(--border);transition:.2s var(--ease)}
 .btn-ghost:hover{color:var(--text);border-color:var(--border-strong)}
-.btn-save{flex:1.4;height:46px;border-radius:12px;font-size:14px;font-weight:650;color:#06241a;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px -8px var(--accent);transition:.2s var(--ease)}
-.btn-save:hover{transform:translateY(-1px)}
+.btn-save{flex:1.4;height:46px;border-radius:12px;font-size:14px;font-weight:650;color:var(--accent-contrast);
+  background:var(--accent);transition:.2s var(--ease)}
+.btn-save:hover{transform:translateY(-1px);opacity:.9}
 .detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
 .mini-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px 19px}
 .mini-stat .l{font-size:12px;color:var(--text-2);font-weight:500}
 .mini-stat .v{font-size:24px;font-weight:740;letter-spacing:-.03em;margin-top:7px}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px}
 .bars{display:flex;align-items:flex-end;gap:4px;height:150px;padding-top:10px}
-.bars .bar{flex:1;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--accent),var(--accent-2));min-height:3px;transition:height .5s var(--ease);position:relative}
-.bars .bar.bad{background:linear-gradient(180deg,var(--down),#d63d4d)}
+.bars .bar{flex:1;border-radius:5px 5px 2px 2px;background:var(--accent);min-height:3px;transition:height .5s var(--ease);position:relative}
+.bars .bar.bad{background:var(--down)}
 .back-btn{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:18px;transition:.18s}
 .back-btn:hover{color:var(--text)}.back-btn svg{width:17px;height:17px}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
@@ -172,7 +174,7 @@ td.mono{font-family:var(--mono);font-size:12.5px}
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#06241a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3 8 4-16 3 8h6"/></svg></div>
+      <div class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3 8 4-16 3 8h6"/></svg></div>
       <div><h1>Pulse</h1><small>SITE MONITORING</small></div>
     </div>
     <button class="nav-item active" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Дашборд</span></button>
@@ -433,7 +435,7 @@ td.mono{font-family:var(--mono);font-size:12.5px}
     async checkNow(id){toast('Проверяю…');try{await checkNow(id);await render();toast('Проверка выполнена ✓');}catch(e){toast('Ошибка: '+e.message,true);}},
     confirmDelete(id,name){
       document.getElementById('modal').innerHTML=`<h3>Удалить сайт?</h3><p style="color:var(--text-2);font-size:14.5px;line-height:1.5;margin-bottom:8px">«${esc(name)}» будет удалён вместе со всей историей проверок. Действие необратимо.</p>
-        <div class="modal-foot"><button class="btn-ghost" onclick="Pulse.closeModal()">Отмена</button><button class="btn-save" style="background:linear-gradient(135deg,var(--down),#d63d4d);color:#fff;box-shadow:none" onclick="Pulse.doDelete(${id})">Удалить</button></div>`;
+        <div class="modal-foot"><button class="btn-ghost" onclick="Pulse.closeModal()">Отмена</button><button class="btn-save" style="background:var(--down);color:#ffffff" onclick="Pulse.doDelete(${id})">Удалить</button></div>`;
       document.getElementById('overlay').classList.add('show');
     },
     async doDelete(id){try{await delSite(id);this.closeModal();view='dashboard';detailId=null;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view==='dashboard'));await render();toast('Сайт удалён');}catch(e){toast('Ошибка: '+e.message,true);}},
